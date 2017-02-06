@@ -13,3 +13,11 @@ class zhihudaiguang(models.Model):
     href = models.CharField(max_length=100)
     content = models.TextField()
     data_score = models.FloatField()
+
+class lives(models.Model):
+    live = JSONField()
+    subject = models.TextField()
+    uptime = models.DateTimeField(auto_now=True)
+    id = models.CharField(max_length=100,primary_key=True)
+    def __unicode__(self):
+        return self.subject
