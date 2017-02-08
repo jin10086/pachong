@@ -13,6 +13,7 @@ class zhihudaiguang(models.Model):
     href = models.CharField(max_length=100)
     content = models.TextField()
     data_score = models.FloatField()
+    xiaobing = JSONField(default=list())
 
 class lives(models.Model):
     live = JSONField()

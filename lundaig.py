@@ -47,6 +47,7 @@ def getimgsrc(offset,topic_id):
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
             imagebase64 = [base64_imgage(image) for image in images]
+
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
@@ -119,9 +120,7 @@ class checkyanzhi():
                          }
             }
         """
-        ret = z2.json()['content']['text']
-        mark = re.findall(r"\d+\.?\d?",ret)
-        return mark[0]
+        return z2.json()
 if __name__ == '__main__':
     s = requests.session()
     getimgsrc(0,237)
