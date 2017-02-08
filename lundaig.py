@@ -61,6 +61,20 @@ def base64_imgage(image):
     ir = s.get(url,headers=HEADERS)
     if ir.status_code == 200:
         return base64.b64encode(ir.content)
+def vote_up(answer_id):
+    url = 'https://www.zhihu.com/node/AnswerVoteBarV2'
+    data = {'method':'vote_up',
+            'params':'{"answer_id":"%s" % answer_id}'}
+    # 获取xsrf
+    _xsrf = getxsrf()
+    # 把_xsrf添加到浏览器头
+    HEADERS['X-Xsrftoken'] = _xsrf
+    z2 = s.post(url,data=data,headers=HEADERS)
+    if z2.status_code == 200:
+        #如果msg不为空，表示点赞出错.
+        if z2.json()['msg'] != None:
+            print z2.json()['msg']
+        
 class checkyanzhi():
     def __init__(self,imagebase64):
         self.ss = requests.session()
@@ -81,7 +95,7 @@ class checkyanzhi():
             u'Url': u'/image/fetchimage?key=JMGqEUAgbwDVieSjh8AgKUq4khZmjMOAaWgzt4SRHupVmtMhpXE1ZRFbaX8'}
         """
         return '%s%s'%(ret['Host'],ret['Url'])
-    
+
     def process(self):
         z1 = self.ss.get(self.yanzhiurl)
         #获取tid
