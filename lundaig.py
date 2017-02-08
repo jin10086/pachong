@@ -87,6 +87,23 @@ class checkyanzhi():
                 'Content[imageUrl]':self.upload()}
         z2 = self.ss.post(url=self.processurl,params={"service":"yanzhi",
                         "tid":tid},data=data)
+        """
+        返回值 
+            {
+                "msgId": "1486513023436",
+                "timestamp": 0,
+                "receiverId": null,
+                "content": {
+                    "text": "妹子竟有8.8分颜值，美得无法直视，多少直男竞折腰，腰，腰",
+                    "imageUrl": "http://mediaplatform.trafficmanager.cn/image/fetchimage?key=UQAfAC8ABAAAAFcAFgAGABYASgBGADgANQA4ADcANQBCAEQANwAzADQANwA0AEQAMAAzADAAQQBGADQAMgA3ADIAQwBFADYAMgAxAEUAMABFADIA",
+                    "metadata": {
+                    "AnswerFeed": "FaceBeautyRanking",
+                    "w": "vc_YiuTzgvP2h_PAW0tgjOnpoMH5vendgPXvgubnhNHehfL4j9L6rvjRsM7ngPXvgPzzhN_YhP7sjvXYrsj7vuP5h8zTiuTlier5jNnUgeTf",
+                    "aid": "AFC44578B499147016D1C68CDC73F993"
+                                }
+                         }
+            }
+        """
         ret = z2.json()['content']['text']
         mark = re.findall(r"\d+\.?\d?",ret)
         print mark
