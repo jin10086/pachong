@@ -58,29 +58,29 @@ def getimgsrc(offset,topic_id):
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
-            # try:
-            xiaobing = []
-            #如果图片大于3张，则随机选3张
-            if len(images) > 3:
-                images_ = random.sample(images,3)
-            else:
-                images_ = images
+            try:
+                xiaobing = []
+                #如果图片大于3张，则随机选3张
+                if len(images) > 3:
+                    images_ = random.sample(images,3)
+                else:
+                    images_ = images
 
-            with futures.ThreadPoolExecutor(max_workers=3) as executor:
-                future_to_url = dict((executor.submit(process,base64_imgage(image)), image)
-                                    for image in images_)
+                with futures.ThreadPoolExecutor(max_workers=3) as executor:
+                    future_to_url = dict((executor.submit(process,base64_imgage(image)), image)
+                                        for image in images_)
 
-                for future in futures.as_completed(future_to_url):
-                    url = future_to_url[future]
-                    if future.exception() is not None:
-                        print('%r generated an exception: %s' % (url,
-                                                                future.exception()))
-                    else:
-                        xiaobing.append(future.result())
+                    for future in futures.as_completed(future_to_url):
+                        url = future_to_url[future]
+                        if future.exception() is not None:
+                            print('%r generated an exception: %s' % (url,
+                                                                    future.exception()))
+                        else:
+                            xiaobing.append(future.result())
                             # print('%r page is %d bytes' % (url, len(future.result())))
                 # xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
-            # except:
-                # xiaobing = []
+            except:
+                xiaobing = []
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
@@ -153,8 +153,16 @@ def process(imagebase64):
 if __name__ == '__main__':
     s = requests.session()
     ss = requests.session()
-    for i in getalltopic():
-        print i
-        getimgsrc(0,i)
+    ss.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                    'Accept-Language':'zh-CN,zh;q=0.8'}
+    with futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    future_to_topic = dict((executor.submit(getimgsrc,0,i), i)
+                                        for i in getalltopic())
+                    for future_ in futures.as_completed(future_to_topic):
+                        url = future_to_topic[future_]
+                        if future_.exception() is not None:
+                            print('%r generated an exception: %s' % (url,
+                                                                    future_.exception()))
+    
 
 
