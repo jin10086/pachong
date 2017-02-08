@@ -42,12 +42,25 @@ def getimgsrc():
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
+            """
+            生成图片名字 
+            images -->['https://pic3.zhimg.com/v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
+            imagenames -->['v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
+            """
+            imagenames = [image.split(r'/')[-1] for image in images]
+            downloadimage(images)
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
             #时间戳
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
             print answer_id,title,href,data_score
+#下载图片 
+def downloadimage(urllist):
+    for url in urllist:
+        ir = s.get(url,headers=HEADERS)
+        if ir.status_code == 200:
+            open('images\%s' %(url.split(r'/')[-1]), 'wb').write(ir.content)
 if __name__ == '__main__':
     s = requests.session()
     getimgsrc()
