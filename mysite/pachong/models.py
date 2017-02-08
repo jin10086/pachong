@@ -14,6 +14,7 @@ class zhihudaiguang(models.Model):
     content = models.TextField()
     data_score = models.FloatField()
     xiaobing = JSONField(default=list())
+    topic_id = models.IntegerField(default=0)
 
 class lives(models.Model):
     live = JSONField()

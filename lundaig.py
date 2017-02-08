@@ -4,6 +4,17 @@ import re
 import requests
 from lxml import etree
 import base64
+import os
+basedir = os.path.dirname(os.path.abspath(__file__))
+
+import sys
+sys.path.append(os.path.join(basedir,'mysite'))
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mysite.settings'
+import django
+django.setup()
+
+from pachong.models import zhihudaiguang
 
 HEADERS = {
     'Cookie':'aliyungf_tc=AQAAAJoqcw1qvwIAa9KgtE4hNNwwiC+T; q_c1=fae863417aa447b7af04dcf2a704c01f|1486204080000|1486204080000; _xsrf=acea3e0cb2ccdc6ca9ff149776a0c1da; l_cap_id="MWYxNzIzMzUwNzZkNDEzMTkwN2UxMDY2M2U5YTU5Yzc=|1486204080|0fdccdb7ae2bab48441eb9903b7022355256c360"; cap_id="MzViMWVkNDc0MzFhNGU0ZTkyNWM3ZmRkY2VmNDFmZmY=|1486204080|26eba0c9408a73dd5804798c4fe944bf420bac93"; _zap=ab02de8b-5911-4842-b807-5c0555657f41; d_c0="ACDC1k8-QguPTtp_xvh0EpYybObAcbLgPUc=|1486204080"; login="MDhmOTBmMzVmNmExNDlkNjhhZjU3ZGVlZGNjZDVhNzM=|1486204093|58158eb04805198146c489d8a686d06131bd3552"; n_c=1; __utmt=1; __utma=51854390.1877980709.1486206322.1486206322.1486206322.1; __utmb=51854390.8.10.1486206322; __utmc=51854390; __utmz=51854390.1486206322.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=51854390.100--|2=registration_date=20160916=1^3=entry_date=20160916=1; z_c0=Mi4wQUdDQU5lTHRqQW9BSU1MV1R6NUNDeGNBQUFCaEFsVk54am05V0FEaklzYVJKNkpKdmpuSTNzX0diai1XWmRMemt3|1486206483|be5a953a5929bb534e4178d898f7d1342e17efc6',
@@ -33,7 +44,6 @@ def getimgsrc(offset,topic_id):
     HEADERS['X-Xsrftoken'] = _xsrf
     data = {'method': 'next',
             'params': '{"offset":%s,"topic_id":%s,"feed_type":"timeline_feed"}' %(offset,topic_id)}
-    print data
     z1 = s.post('https://www.zhihu.com/node/TopicFeedList',
                 data=data, headers=HEADERS)
     #把所有的html代码拼接起来
@@ -46,14 +56,16 @@ def getimgsrc(offset,topic_id):
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
-            imagebase64 = [base64_imgage(image) for image in images]
-
+            xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
             #时间戳
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
-            print answer_id,title,href,data_score
+            #存储到数据库
+            b = zhihudaiguang(imageurl=images,id=answer_id,title=title,href=href,content=contents,
+                                        data_score=data_score,xiaobing=xiaobing,topic_id=topic_id)
+            b.save()
 #把图片转成 base64 
 def base64_imgage(url):
     ir = s.get(url,headers=HEADERS)
@@ -85,7 +97,7 @@ class checkyanzhi():
         # 图片的base64
         self.imagebase64 = imagebase64
     def upload(self):
-        z = ss.post(self.uploadurl,self.imagebase64)
+        z = self.ss.post(self.uploadurl,self.imagebase64)
         ret = z.json()
         """
         返回值
@@ -123,6 +135,7 @@ class checkyanzhi():
         return z2.json()
 if __name__ == '__main__':
     s = requests.session()
-    getimgsrc(0,237)
+    for i in getalltopic():
+        getimgsrc(0,i)
 
 
