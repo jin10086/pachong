@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import time
+import re
 import requests
 from lxml import etree
 
@@ -61,6 +63,35 @@ def downloadimage(urllist):
         ir = s.get(url,headers=HEADERS)
         if ir.status_code == 200:
             open('images\%s' %(url.split(r'/')[-1]), 'wb').write(ir.content)
+class checkyanzhi():
+    def __init__(self,imagebase64):
+        self.s = requests.session()
+        self.uploadurl = 'https://kan.msxiaobing.com/Api/Image/UploadBase64'
+        self.yanzhiurl = 'https://kan.msxiaobing.com/ImageGame/Portal?task=yanzhi'
+        self.processurl = 'https://kan.msxiaobing.com/Api/ImageAnalyze/Process'
+        self.imagebase64 = imagebase64
+    def upload(self):
+        z = s.post(self.uploadurl,self.imagebase64)
+        ret = z.json()
+        """
+        返回值
+        {u'Host': u'https://mediaplatform.msxiaobing.com',
+            u'Url': u'/image/fetchimage?key=JMGqEUAgbwDVieSjh8AgKUq4khZmjMOAaWgzt4SRHupVmtMhpXE1ZRFbaX8'}
+        """
+        return '%s%s'%(ret['Host'],ret['Url'])
+    
+    def process(self):
+        z1 = self.s.get(self.yanzhiurl)
+        #获取tid
+        tid = etree.HTML(z1.content).xpath('//input[@name="tid"]/@value')[0]
+        tm = time.time()
+        data = {'MsgId':'%s' %int(tm*1000),'CreateTime':'%s' %int(tm),
+                'Content[imageUrl]':self.upload()}
+        z2 = self.s.post(url=self.processurl,params={"service":"yanzhi",
+                        "tid":tid},data=data)
+        ret = z2.json()['content']['text']
+        mark = re.findall(r"\d+\.?\d?",ret)
+        print mark
 if __name__ == '__main__':
     s = requests.session()
     getimgsrc()
