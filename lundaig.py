@@ -3,7 +3,7 @@ import time
 import re
 import requests
 from lxml import etree
-
+import base64
 
 HEADERS = {
     'Cookie':'aliyungf_tc=AQAAAJoqcw1qvwIAa9KgtE4hNNwwiC+T; q_c1=fae863417aa447b7af04dcf2a704c01f|1486204080000|1486204080000; _xsrf=acea3e0cb2ccdc6ca9ff149776a0c1da; l_cap_id="MWYxNzIzMzUwNzZkNDEzMTkwN2UxMDY2M2U5YTU5Yzc=|1486204080|0fdccdb7ae2bab48441eb9903b7022355256c360"; cap_id="MzViMWVkNDc0MzFhNGU0ZTkyNWM3ZmRkY2VmNDFmZmY=|1486204080|26eba0c9408a73dd5804798c4fe944bf420bac93"; _zap=ab02de8b-5911-4842-b807-5c0555657f41; d_c0="ACDC1k8-QguPTtp_xvh0EpYybObAcbLgPUc=|1486204080"; login="MDhmOTBmMzVmNmExNDlkNjhhZjU3ZGVlZGNjZDVhNzM=|1486204093|58158eb04805198146c489d8a686d06131bd3552"; n_c=1; __utmt=1; __utma=51854390.1877980709.1486206322.1486206322.1486206322.1; __utmb=51854390.8.10.1486206322; __utmc=51854390; __utmz=51854390.1486206322.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=51854390.100--|2=registration_date=20160916=1^3=entry_date=20160916=1; z_c0=Mi4wQUdDQU5lTHRqQW9BSU1MV1R6NUNDeGNBQUFCaEFsVk54am05V0FEaklzYVJKNkpKdmpuSTNzX0diai1XWmRMemt3|1486206483|be5a953a5929bb534e4178d898f7d1342e17efc6',
@@ -49,29 +49,27 @@ def getimgsrc():
             images -->['https://pic3.zhimg.com/v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
             imagenames -->['v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
             """
-            imagenames = [image.split(r'/')[-1] for image in images]
-            downloadimage(images)
+            imagebase64 = [base64_imgage(image) for image in images]
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
             #时间戳
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
             print answer_id,title,href,data_score
-#下载图片 
-def downloadimage(urllist):
-    for url in urllist:
-        ir = s.get(url,headers=HEADERS)
-        if ir.status_code == 200:
-            open('images\%s' %(url.split(r'/')[-1]), 'wb').write(ir.content)
+#把图片转成 base64 
+def base64_imgage(image):
+    ir = s.get(url,headers=HEADERS)
+    if ir.status_code == 200:
+        return base64.b64encode(ir.content)
 class checkyanzhi():
     def __init__(self,imagebase64):
-        self.s = requests.session()
+        self.ss = requests.session()
         self.uploadurl = 'https://kan.msxiaobing.com/Api/Image/UploadBase64'
         self.yanzhiurl = 'https://kan.msxiaobing.com/ImageGame/Portal?task=yanzhi'
         self.processurl = 'https://kan.msxiaobing.com/Api/ImageAnalyze/Process'
         self.imagebase64 = imagebase64
     def upload(self):
-        z = s.post(self.uploadurl,self.imagebase64)
+        z = ss.post(self.uploadurl,self.imagebase64)
         ret = z.json()
         """
         返回值
@@ -81,13 +79,13 @@ class checkyanzhi():
         return '%s%s'%(ret['Host'],ret['Url'])
     
     def process(self):
-        z1 = self.s.get(self.yanzhiurl)
+        z1 = self.ss.get(self.yanzhiurl)
         #获取tid
         tid = etree.HTML(z1.content).xpath('//input[@name="tid"]/@value')[0]
         tm = time.time()
         data = {'MsgId':'%s' %int(tm*1000),'CreateTime':'%s' %int(tm),
                 'Content[imageUrl]':self.upload()}
-        z2 = self.s.post(url=self.processurl,params={"service":"yanzhi",
+        z2 = self.ss.post(url=self.processurl,params={"service":"yanzhi",
                         "tid":tid},data=data)
         ret = z2.json()['content']['text']
         mark = re.findall(r"\d+\.?\d?",ret)
