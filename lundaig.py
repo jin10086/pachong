@@ -26,13 +26,14 @@ def getxsrf():
     _xsrf = etree.HTML(z.content).xpath('//input[@name="_xsrf"]/@value')[0]
     return _xsrf
 
-def getimgsrc():
+def getimgsrc(offset,topic_id):
     # 获取xsrf
     _xsrf = getxsrf()
     # 把_xsrf添加到浏览器头
     HEADERS['X-Xsrftoken'] = _xsrf
     data = {'method': 'next',
-            'params': '{"offset":1486212157.0,"topic_id":11385,"feed_type":"timeline_feed"}'}
+            'params': '{"offset":%s,"topic_id":%s,"feed_type":"timeline_feed"}' %(offset,topic_id)}
+    print data
     z1 = s.post('https://www.zhihu.com/node/TopicFeedList',
                 data=data, headers=HEADERS)
     #把所有的html代码拼接起来
@@ -45,11 +46,6 @@ def getimgsrc():
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
-            """
-            生成图片名字 
-            images -->['https://pic3.zhimg.com/v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
-            imagenames -->['v2-ce8a845a830a195f20538ea765b7fe9a_b.jpg']
-            """
             imagebase64 = [base64_imgage(image) for image in images]
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
@@ -58,7 +54,7 @@ def getimgsrc():
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
             print answer_id,title,href,data_score
 #把图片转成 base64 
-def base64_imgage(image):
+def base64_imgage(url):
     ir = s.get(url,headers=HEADERS)
     if ir.status_code == 200:
         return base64.b64encode(ir.content)
@@ -128,6 +124,6 @@ class checkyanzhi():
         return mark[0]
 if __name__ == '__main__':
     s = requests.session()
-    getimgsrc()
+    getimgsrc(0,237)
 
 
