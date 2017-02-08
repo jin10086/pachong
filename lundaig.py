@@ -17,8 +17,9 @@ def getalltopic():
     #获取所有话题
     topic = z.json()['payload']
     #打印出关注了多少条话题
-    print len(topic)
+    # print len(topic)
     #这边返回36，与我实际的一样，所以话题是应该抓取成功了ww.zhihu.com/followed_topics?offset=0&limit=80'
+    return [i['id'] for i in topic]
 
 def getxsrf():
     z = s.get('https://www.zhihu.com/topic#胸部',headers=HEADERS)
