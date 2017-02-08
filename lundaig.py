@@ -64,9 +64,13 @@ def base64_imgage(image):
 class checkyanzhi():
     def __init__(self,imagebase64):
         self.ss = requests.session()
+        # 上传图片地址
         self.uploadurl = 'https://kan.msxiaobing.com/Api/Image/UploadBase64'
+        # 首页地址（获取tid的地址）
         self.yanzhiurl = 'https://kan.msxiaobing.com/ImageGame/Portal?task=yanzhi'
+        # 得到分数的地址
         self.processurl = 'https://kan.msxiaobing.com/Api/ImageAnalyze/Process'
+        # 图片的base64
         self.imagebase64 = imagebase64
     def upload(self):
         z = ss.post(self.uploadurl,self.imagebase64)
@@ -106,7 +110,7 @@ class checkyanzhi():
         """
         ret = z2.json()['content']['text']
         mark = re.findall(r"\d+\.?\d?",ret)
-        print mark
+        return mark[0]
 if __name__ == '__main__':
     s = requests.session()
     getimgsrc()
