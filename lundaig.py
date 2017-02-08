@@ -56,7 +56,7 @@ def getimgsrc(offset,topic_id):
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
-            try：
+            try:
                 xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
             except:
                 xiaobing = []
