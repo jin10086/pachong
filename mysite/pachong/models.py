@@ -9,6 +9,7 @@ class zhihudaiguang(models.Model):
     id = models.CharField(max_length=50,primary_key=True)
     is_vote_up = models.BooleanField(default=False)
     is_sex = models.BooleanField(default=False)
+    is_check = models.BooleanField(default=False)
     title = models.CharField(max_length=100)
     href = models.CharField(max_length=100)
     content = models.TextField()

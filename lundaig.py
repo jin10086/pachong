@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from concurrent import futures
 import time
 import re
+import random
 import requests
 from lxml import etree
 import base64
@@ -56,10 +58,29 @@ def getimgsrc(offset,topic_id):
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
-            try:
-                xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
-            except:
-                xiaobing = []
+            # try:
+            xiaobing = []
+            #如果图片大于3张，则随机选3张
+            if len(images) > 3:
+                images_ = random.sample(images,3)
+            else:
+                images_ = images
+
+            with futures.ThreadPoolExecutor(max_workers=3) as executor:
+                future_to_url = dict((executor.submit(process,base64_imgage(image)), image)
+                                    for image in images_)
+
+                for future in futures.as_completed(future_to_url):
+                    url = future_to_url[future]
+                    if future.exception() is not None:
+                        print('%r generated an exception: %s' % (url,
+                                                                future.exception()))
+                    else:
+                        xiaobing.append(future.result())
+                            # print('%r page is %d bytes' % (url, len(future.result())))
+                # xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
+            # except:
+                # xiaobing = []
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
@@ -88,57 +109,52 @@ def vote_up(answer_id):
         if z2.json()['msg'] != None:
             print z2.json()['msg']
         
-class checkyanzhi():
-    def __init__(self,imagebase64):
-        self.ss = requests.session()
-        # 上传图片地址
-        self.uploadurl = 'https://kan.msxiaobing.com/Api/Image/UploadBase64'
-        # 首页地址（获取tid的地址）
-        self.yanzhiurl = 'https://kan.msxiaobing.com/ImageGame/Portal?task=yanzhi'
-        # 得到分数的地址
-        self.processurl = 'https://kan.msxiaobing.com/Api/ImageAnalyze/Process'
-        # 图片的base64
-        self.imagebase64 = imagebase64
-    def upload(self):
-        z = self.ss.post(self.uploadurl,self.imagebase64)
-        ret = z.json()
-        """
-        返回值
-        {u'Host': u'https://mediaplatform.msxiaobing.com',
-            u'Url': u'/image/fetchimage?key=JMGqEUAgbwDVieSjh8AgKUq4khZmjMOAaWgzt4SRHupVmtMhpXE1ZRFbaX8'}
-        """
-        return '%s%s'%(ret['Host'],ret['Url'])
 
-    def process(self):
-        z1 = self.ss.get(self.yanzhiurl)
-        #获取tid
-        tid = etree.HTML(z1.content).xpath('//input[@name="tid"]/@value')[0]
-        tm = time.time()
-        data = {'MsgId':'%s' %int(tm*1000),'CreateTime':'%s' %int(tm),
-                'Content[imageUrl]':self.upload()}
-        z2 = self.ss.post(url=self.processurl,params={"service":"yanzhi",
-                        "tid":tid},data=data)
-        """
-        返回值 
-            {
-                "msgId": "1486513023436",
-                "timestamp": 0,
-                "receiverId": null,
-                "content": {
-                    "text": "妹子竟有8.8分颜值，美得无法直视，多少直男竞折腰，腰，腰",
-                    "imageUrl": "http://mediaplatform.trafficmanager.cn/image/fetchimage?key=UQAfAC8ABAAAAFcAFgAGABYASgBGADgANQA4ADcANQBCAEQANwAzADQANwA0AEQAMAAzADAAQQBGADQAMgA3ADIAQwBFADYAMgAxAEUAMABFADIA",
-                    "metadata": {
-                    "AnswerFeed": "FaceBeautyRanking",
-                    "w": "vc_YiuTzgvP2h_PAW0tgjOnpoMH5vendgPXvgubnhNHehfL4j9L6rvjRsM7ngPXvgPzzhN_YhP7sjvXYrsj7vuP5h8zTiuTlier5jNnUgeTf",
-                    "aid": "AFC44578B499147016D1C68CDC73F993"
-                                }
-                         }
-            }
-        """
-        return z2.json()
+def upload(imagebase64):
+    uploadurl = 'https://kan.msxiaobing.com/Api/Image/UploadBase64'
+    z = ss.post(uploadurl,imagebase64)
+    ret = z.json()
+    """
+    返回值
+    {u'Host': u'https://mediaplatform.msxiaobing.com',
+        u'Url': u'/image/fetchimage?key=JMGqEUAgbwDVieSjh8AgKUq4khZmjMOAaWgzt4SRHupVmtMhpXE1ZRFbaX8'}
+    """
+    return '%s%s'%(ret['Host'],ret['Url'])
+
+def process(imagebase64):
+    yanzhiurl = 'https://kan.msxiaobing.com/ImageGame/Portal?task=yanzhi'
+    processurl = 'https://kan.msxiaobing.com/Api/ImageAnalyze/Process'
+    z1 = ss.get(yanzhiurl)
+    #获取tid
+    tid = etree.HTML(z1.content).xpath('//input[@name="tid"]/@value')[0]
+    tm = time.time()
+    data = {'MsgId':'%s' %int(tm*1000),'CreateTime':'%s' %int(tm),
+            'Content[imageUrl]':upload(imagebase64)}
+    z2 = ss.post(url=processurl,params={"service":"yanzhi",
+                    "tid":tid},data=data)
+    """
+    返回值 
+        {
+            "msgId": "1486513023436",
+            "timestamp": 0,
+            "receiverId": null,
+            "content": {
+                "text": "妹子竟有8.8分颜值，美得无法直视，多少直男竞折腰，腰，腰",
+                "imageUrl": "http://mediaplatform.trafficmanager.cn/image/fetchimage?key=UQAfAC8ABAAAAFcAFgAGABYASgBGADgANQA4ADcANQBCAEQANwAzADQANwA0AEQAMAAzADAAQQBGADQAMgA3ADIAQwBFADYAMgAxAEUAMABFADIA",
+                "metadata": {
+                "AnswerFeed": "FaceBeautyRanking",
+                "w": "vc_YiuTzgvP2h_PAW0tgjOnpoMH5vendgPXvgubnhNHehfL4j9L6rvjRsM7ngPXvgPzzhN_YhP7sjvXYrsj7vuP5h8zTiuTlier5jNnUgeTf",
+                "aid": "AFC44578B499147016D1C68CDC73F993"
+                            }
+                        }
+        }
+    """
+    return z2.json()
 if __name__ == '__main__':
     s = requests.session()
+    ss = requests.session()
     for i in getalltopic():
+        print i
         getimgsrc(0,i)
 
 
