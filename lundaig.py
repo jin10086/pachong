@@ -81,9 +81,9 @@ def getimgsrc(offset,topic_id):
                         else:
                             xiaobing.append(future.result())
                 # 获取分数
-                fs = [re.search(r"\d+\.?\d?",xx['content']['text']).group() for xx in xiaobing if re.search(r"\d+\.?\d?" ,xx['content']['text'])]
+                fs = [re.search(r"\d+\.?\d?",xx['content']['text']).group() for xx in xiaobing if re.search(r"\d+\.?\d?",xx['content']['text'])]
                 if len(fs) != 0:
-                    if float(max(xxxx)) > 7.5:
+                    if float(max(fs)) > 7.5:
                         is_sex = True
             except Exception as ex:
                 logging.exception('yanzhi check error')
@@ -157,6 +157,9 @@ def process(imagebase64):
         }
     """
     return z2.json()
+#获取最新的 话题
+def getmaxtopic(topic_id):
+    pass
 if __name__ == '__main__':
     s = requests.session()
     ss = requests.session()
