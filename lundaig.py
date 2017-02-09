@@ -20,10 +20,13 @@ django.setup()
 from pachong.models import zhihudaiguang
 
 HEADERS = {
-    'Cookie':'aliyungf_tc=AQAAAJoqcw1qvwIAa9KgtE4hNNwwiC+T; q_c1=fae863417aa447b7af04dcf2a704c01f|1486204080000|1486204080000; _xsrf=acea3e0cb2ccdc6ca9ff149776a0c1da; l_cap_id="MWYxNzIzMzUwNzZkNDEzMTkwN2UxMDY2M2U5YTU5Yzc=|1486204080|0fdccdb7ae2bab48441eb9903b7022355256c360"; cap_id="MzViMWVkNDc0MzFhNGU0ZTkyNWM3ZmRkY2VmNDFmZmY=|1486204080|26eba0c9408a73dd5804798c4fe944bf420bac93"; _zap=ab02de8b-5911-4842-b807-5c0555657f41; d_c0="ACDC1k8-QguPTtp_xvh0EpYybObAcbLgPUc=|1486204080"; login="MDhmOTBmMzVmNmExNDlkNjhhZjU3ZGVlZGNjZDVhNzM=|1486204093|58158eb04805198146c489d8a686d06131bd3552"; n_c=1; __utmt=1; __utma=51854390.1877980709.1486206322.1486206322.1486206322.1; __utmb=51854390.8.10.1486206322; __utmc=51854390; __utmz=51854390.1486206322.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=51854390.100--|2=registration_date=20160916=1^3=entry_date=20160916=1; z_c0=Mi4wQUdDQU5lTHRqQW9BSU1MV1R6NUNDeGNBQUFCaEFsVk54am05V0FEaklzYVJKNkpKdmpuSTNzX0diai1XWmRMemt3|1486206483|be5a953a5929bb534e4178d898f7d1342e17efc6',
+    'Cookie':'aliyungf_tc=AQAAAIiDlXdZTAAA7tGgtF/RbWfYmcVR; q_c1=b492ba469ae947c4a19f9f9cf1c82a5a|1486649721000|1486649721000; _xsrf=8a07f000dd22fead65c8b0f507bc8ca1; l_cap_id="MmQ1MDMxMWU1M2FhNGFmY2JjYTdiMmQ1NDZjZWRlZjY=|1486649721|7bd3e217765ca79d3f4d807c68f7ee6cd2412436"; cap_id="NWMwZGQ0M2YxYjRiNGVlNGJhZGRmMjMyMGZiNTA1ZWI=|1486649721|675fbcb242264d9bc861a1f0b1d6f0f168a3c16f"; d_c0="ACDC80viSAuPTqF1PkPvoPYgMkKuvHnYwvg=|1486649721"; _zap=9e5ea9d7-6805-472f-85f4-8d95dbbfff8f; login="OGU5ZjQzNzFiNDQxNDFkNmE0MTYxMTY3ODlhNTI1YTg=|1486649738|9c83197960966a947218a4b2ab44194e8e2aeb79"; n_c=1; __utma=51854390.915151200.1486649725.1486649725.1486649725.1; __utmb=51854390.0.10.1486649725; __utmc=51854390; __utmz=51854390.1486649725.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=51854390.100--|2=registration_date=20160916=1^3=entry_date=20160916=1; z_c0=Mi4wQUdDQU5lTHRqQW9BSU1MelMtSklDeGNBQUFCaEFsVk5wd2JFV0FETm9WOWE0SkItNmtjN0swYWFvZ0IySThzc0Vn|1486649934|7335dd7c419d716022ac7f73fd27739cce5ce0db',
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
 }
-
+s = requests.session()
+ss = requests.session()
+ss.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                'Accept-Language':'zh-CN,zh;q=0.8'}
 def getalltopic():
     # 获取话题的url，注意 offset已经改为了0，表示从0开始后面的80条
     url = 'https://www.zhihu.com/followed_topics?offset=0&limit=80'
@@ -45,58 +48,70 @@ def getimgsrc(offset,topic_id):
     _xsrf = getxsrf()
     # 把_xsrf添加到浏览器头
     HEADERS['X-Xsrftoken'] = _xsrf
-    data = {'method': 'next',
-            'params': '{"offset":%s,"topic_id":%s,"feed_type":"timeline_feed"}' %(offset,topic_id)}
-    z1 = s.post('https://www.zhihu.com/node/TopicFeedList',
-                data=data, headers=HEADERS)
-    #把所有的html代码拼接起来
-    html = ''.join(z1.json()['msg'])
-    ll = etree.HTML(html)
-    #获取当前回答的所有内容
-    contents = ll.xpath('//textarea[@class="content"]/text()')
-    for i in range(len(contents)):
-        #提取出其中的图片地址
-        images = etree.HTML(contents[i]).xpath('//img/@src')
-        #如果图片不为0的话，则得到answer-id，点赞会用到
-        if len(images)!= 0:
-            xiaobing = []
-            fs = []
-            is_sex = False
-            try:
-                #如果图片大于3张，则随机选3张
-                if len(images) > 3:
-                    images_ = random.sample(images,3)
-                else:
-                    images_ = images
-
-                with futures.ThreadPoolExecutor(max_workers=3) as executor:
-                    future_to_url = dict((executor.submit(process,base64_imgage(image)), image)
-                                        for image in images_)
-
-                    for future in futures.as_completed(future_to_url):
-                        url = future_to_url[future]
-                        if future.exception() is not None:
-                            print('%r generated an exception: %s' % (url,
-                                                                    future.exception()))
-                        else:
-                            xiaobing.append(future.result())
-                # 获取分数
-                fs = [re.search(r"\d+\.?\d?",xx['content']['text']).group() for xx in xiaobing if re.search(r"\d+\.?\d?",xx['content']['text'])]
-                if len(fs) != 0:
-                    if float(max(fs)) > 7.5:
-                        is_sex = True
-            except Exception as ex:
-                logging.exception('yanzhi check error')
-            answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
-            title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
-            href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
+    #当前数据库内最大值
+    maxdata_score = getmaxtopic(topic_id)
+    while True:
+        data = {'method': 'next',
+                'params': '{"offset":%s,"topic_id":%s,"feed_type":"timeline_feed"}' %(offset,topic_id)}
+        z1 = s.post('https://www.zhihu.com/node/TopicFeedList',
+                    data=data, headers=HEADERS)
+        #把所有的html代码拼接起来
+        html = ''.join(z1.json()['msg'])
+        ll = etree.HTML(html)
+        #获取当前回答的所有内容
+        contents = ll.xpath('//textarea[@class="content"]/text()')
+        for i in range(len(contents)):
             #时间戳
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
-            #存储到数据库
-            b = zhihudaiguang(imageurl=images,id=answer_id,title=title,href=href,content=contents,
-                                        data_score=data_score,xiaobing=xiaobing,topic_id=topic_id,is_sex=is_sex,fs=fs)
-            b.save()
+            #如果数据库的时间戳大于当前抓的,说明抓到重复的了，所以跳过
+            if maxdata_score != None:
+                if maxdata_score >= float(data_score):
+                    break
 
+            #提取出其中的图片地址
+            images = etree.HTML(contents[i]).xpath('//img/@src')
+            #如果图片不为0的话，则得到answer-id，点赞会用到
+            if len(images)!= 0:
+                xiaobing = []
+                fs = []
+                is_sex = False
+                try:
+                    #如果图片大于3张，则随机选3张
+                    if len(images) > 3:
+                        images_ = random.sample(images,3)
+                    else:
+                        images_ = images
+
+                    with futures.ThreadPoolExecutor(max_workers=3) as executor:
+                        future_to_url = dict((executor.submit(process,base64_imgage(image)), image)
+                                            for image in images_)
+
+                        for future in futures.as_completed(future_to_url):
+                            url = future_to_url[future]
+                            if future.exception() is not None:
+                                print('%r generated an exception: %s' % (url,
+                                                                        future.exception()))
+                            else:
+                                xiaobing.append(future.result())
+                    # 获取分数
+                    fs = [re.search(r"\d+\.?\d?",xx['content']['text']).group() for xx in xiaobing if re.search(r"\d+\.?\d?",xx['content']['text'])]
+                    if len(fs) != 0:
+                        if float(max(fs)) > 7.5:
+                            is_sex = True
+                except Exception as ex:
+                    logging.exception('yanzhi check error')
+                answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
+                title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
+                href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
+                
+                #存储到数据库
+                b = zhihudaiguang(imageurl=images,id=answer_id,title=title,href=href,content=contents,
+                                            data_score=data_score,xiaobing=xiaobing,topic_id=topic_id,is_sex=is_sex,fs=fs)
+                b.save()
+        if maxdata_score == None:
+            break
+        else:
+            ll.xpath('//div[@class="feed-item feed-item-hook  folding"][last()]/@data-score')[0]
 #把图片转成 base64 
 def base64_imgage(url):
     ir = s.get(url,headers=HEADERS)
@@ -165,10 +180,7 @@ def getmaxtopic(topic_id):
         logging.exception('get max time error')
         return None
 if __name__ == '__main__':
-    s = requests.session()
-    ss = requests.session()
-    ss.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-                    'Accept-Language':'zh-CN,zh;q=0.8'}
+
     with futures.ThreadPoolExecutor(max_workers=5) as executor:
                     future_to_topic = dict((executor.submit(getimgsrc,0,i), i)
                                         for i in getalltopic())
