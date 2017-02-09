@@ -3,6 +3,7 @@ from concurrent import futures
 import time
 import re
 import random
+import logging
 import requests
 from lxml import etree
 import base64
@@ -58,8 +59,10 @@ def getimgsrc(offset,topic_id):
         images = etree.HTML(contents[i]).xpath('//img/@src')
         #如果图片不为0的话，则得到answer-id，点赞会用到
         if len(images)!= 0:
+            xiaobing = []
+            fs = []
+            is_sex = False
             try:
-                xiaobing = []
                 #如果图片大于3张，则随机选3张
                 if len(images) > 3:
                     images_ = random.sample(images,3)
@@ -77,10 +80,13 @@ def getimgsrc(offset,topic_id):
                                                                     future.exception()))
                         else:
                             xiaobing.append(future.result())
-                            # print('%r page is %d bytes' % (url, len(future.result())))
-                # xiaobing = [checkyanzhi(base64_imgage(image)).process() for image in images]
-            except:
-                xiaobing = []
+                # 获取分数
+                fs = [re.search(r"\d+\.?\d?",xx['content']['text']).group() for xx in xiaobing if re.search(r"\d+\.?\d?" ,xx['content']['text'])]
+                if len(fs) != 0:
+                    if float(max(xxxx)) > 7.5:
+                        is_sex = True
+            except Exception as ex:
+                logging.exception('yanzhi check error')
             answer_id = ll.xpath('//meta[@itemprop="answer-id"]/@content')[i]
             title = ll.xpath('//div[@class="feed-content"]/h2/a/text()')[i].strip()
             href = ll.xpath('//div[@class="zm-item-rich-text expandable js-collapse-body"]/@data-entry-url')[i]
@@ -88,8 +94,9 @@ def getimgsrc(offset,topic_id):
             data_score = ll.xpath('//div[@class="feed-item feed-item-hook  folding"]/@data-score')[i]
             #存储到数据库
             b = zhihudaiguang(imageurl=images,id=answer_id,title=title,href=href,content=contents,
-                                        data_score=data_score,xiaobing=xiaobing,topic_id=topic_id)
+                                        data_score=data_score,xiaobing=xiaobing,topic_id=topic_id,is_sex=is_sex,fs=fs)
             b.save()
+
 #把图片转成 base64 
 def base64_imgage(url):
     ir = s.get(url,headers=HEADERS)
