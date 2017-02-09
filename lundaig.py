@@ -121,7 +121,6 @@ def vote_up(answer_id):
     url = 'https://www.zhihu.com/node/AnswerVoteBarV2'
     data = {'method':'vote_up',
             'params':'{"answer_id":"%s"}'% answer_id}
-    print data
     # 获取xsrf
     _xsrf = getxsrf()
     # 把_xsrf添加到浏览器头
