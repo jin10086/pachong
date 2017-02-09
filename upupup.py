@@ -10,6 +10,6 @@ if __name__ == '__main__':
         else:
             for i in alllist:
                 vote_up(i.id)
-                i.is_vote_up = False
+                i.is_vote_up = True
                 i.save()
                 time.sleep(2*60)
