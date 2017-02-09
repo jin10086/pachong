@@ -127,11 +127,12 @@ def vote_up(answer_id):
     # 把_xsrf添加到浏览器头
     HEADERS['X-Xsrftoken'] = _xsrf
     z2 = s.post(url,data=data,headers=HEADERS)
-    print z2
     if z2.status_code == 200:
         #如果msg不为空，表示点赞出错.
         if z2.json()['msg'] != None:
             print z2.json()['msg']
+        else:
+            print u'%s点赞ok' % answer_id
         
 
 def upload(imagebase64):
