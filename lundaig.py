@@ -120,12 +120,14 @@ def base64_imgage(url):
 def vote_up(answer_id):
     url = 'https://www.zhihu.com/node/AnswerVoteBarV2'
     data = {'method':'vote_up',
-            'params':'{"answer_id":"%s" % answer_id}'}
+            'params':'{"answer_id":"%s"}'% answer_id}
+    print data
     # 获取xsrf
     _xsrf = getxsrf()
     # 把_xsrf添加到浏览器头
     HEADERS['X-Xsrftoken'] = _xsrf
     z2 = s.post(url,data=data,headers=HEADERS)
+    print z2
     if z2.status_code == 200:
         #如果msg不为空，表示点赞出错.
         if z2.json()['msg'] != None:
