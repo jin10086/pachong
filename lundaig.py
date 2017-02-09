@@ -157,9 +157,13 @@ def process(imagebase64):
         }
     """
     return z2.json()
-#获取最新的 话题
+#获取最新的 话题时间
 def getmaxtopic(topic_id):
-    pass
+    try:
+        return zhihudaiguang.objects.filter(topic_id=topic_id).values_list('data_score',flat=True).order_by('-data_score')[0]
+    except Exception as ex:
+        logging.exception('get max time error')
+        return None
 if __name__ == '__main__':
     s = requests.session()
     ss = requests.session()
