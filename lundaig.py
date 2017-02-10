@@ -71,7 +71,7 @@ def getimgsrc(offset,topic_id):
             #提取出其中的图片地址
             images = etree.HTML(contents[i]).xpath('//img/@src')
             #如果图片不为0的话，则得到answer-id，点赞会用到
-            if len(images)!= 0:
+            if not images:
                 xiaobing = []
                 fs = []
                 is_sex = False
@@ -108,7 +108,7 @@ def getimgsrc(offset,topic_id):
                 b = zhihudaiguang(imageurl=images,id=answer_id,title=title,href=href,content=contents,
                                             data_score=data_score,xiaobing=xiaobing,topic_id=topic_id,is_sex=is_sex,fs=fs)
                 b.save()
-        if maxdata_score == None:
+        if not maxdata_score:
             break
         else:
             ll.xpath('//div[@class="feed-item feed-item-hook  folding"][last()]/@data-score')[0]
